@@ -90,7 +90,7 @@ export function nameFn<T extends (...args: any[]) => void>(name: string, fn: T):
 /**
  * Retrieves function name.
  */
-function fnName(fn: NamedFunction | undefined | null, fallbackName: string = 'Unknown') {
+export function fnName(fn: NamedFunction | undefined | null, fallbackName: string = 'Unknown') {
 	return (
 		(fn && (fn.displayName || fn.name)) ||
 		`${fallbackName}${nameCounters[fallbackName] ? nameCounters[fallbackName]++ : (nameCounters[fallbackName] = 0)}`
