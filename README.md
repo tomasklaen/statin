@@ -6,7 +6,7 @@ Statin is heavily inspired by MobX, in fact, you can say it's a re-implementatio
 
 Features:
 
--   Tiny, ~4KB min, <2KB gz.
+-   Tiny, [<4KB min, <2KB gz](https://bundlephobia.com/package/statin).
 -   Fully typed.
 -   View source friendly, it's just a single medium sized file.
 -   Clean, straight forward, no-magic API.
