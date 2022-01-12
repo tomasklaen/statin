@@ -31,6 +31,10 @@ npm install statin
 
 ## Usage
 
+You can see an interactive example here: [https://codesandbox.io/s/statin-example-yxp4s](https://codesandbox.io/s/statin-example-yxp4s)
+
+Brief summary of statin API:
+
 ```ts
 import {Signal, signal, computed, reaction} from 'statin';
 
@@ -69,55 +73,6 @@ dispose();
 ```
 
 NOTE: In a real codebase, all signal updates in the example above should happen inside an [action](#action). You'll get a warning if they don't. Read the action API for more details.
-
-A bit more practical, real world example:
-
-```ts
-import {Signal, signal, computed, createAction, reaction} from 'statin';
-
-let id = 0;
-const time1000 = signal(Date.now());
-
-// A current time value that updates every second
-setInterval(
-	createAction(() => time1000(Date.now())),
-	1000
-);
-
-class User {
-	id: number;
-	username: Signal<string>;
-	createdAt: number;
-
-	constructor(username: string) {
-		this.id = id++;
-		this.username = signal(username);
-		this.createdAt = Date.now();
-	}
-
-	displayName = computed(() => `${this.username()}#${this.id()}`);
-
-	age = computed(() => {
-		time1000(); // A trick to make this value update every second
-		return Date.now() - this.createdAt;
-	});
-
-	changeUsername = createAction((username: string) => this.username(username));
-}
-
-// Create users
-const users = signal<User[]>([new User('Foo'), new User('Bar')]);
-
-function userToListItem(user: User) {
-	const createdSeconds = Math.round(user.age() / 1000);
-	return `<li>${user.displayName()}: created ${loggedMinutes} seconds ago</li>`;
-}
-
-// Render them
-reaction(() => {
-	document.body.innerHTML = `<ul>${users().map(userToListItem)}</ul>`;
-});
-```
 
 ## Project state
 
@@ -185,14 +140,14 @@ A method that allows manually sending changed signal to all of the signal's obse
 A convenience method to edit mutable signal values such as arrays, maps, sets,... Example:
 
 ```ts
-const names = signal<string[]>([]);
+const set = signal(new Set<string>());
 
-// Mutates names array and sends changed signal afterwards
-names.edit((names) => names.push('John'));
+// Mutates the set and sends changed signal afterwards
+set.edit(set => set.add('foo'));
 
-// Which is essentially just a shorthand for:
-names.value.push('John');
-names.changed();
+// This is essentially just a shorthand for
+set.value.add('foo');
+set.changed();
 ```
 
 Value returned by editor function is ignored as `signal.edit()` is meant for mutating. If you want to instead swap the value for a new one, just do `signal(newValue)`.
