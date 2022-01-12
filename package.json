@@ -1,0 +1,49 @@
+{
+	"name": "statin",
+	"version": "0.0.0",
+	"description": "Simple and tiny reactive state library.",
+	"homepage": "https://github.com/tomasklaen/statin",
+	"bugs": "https://github.com/tomasklaen/statin/issues",
+	"repository": "github:tomasklaen/statin",
+	"main": "dist/index.js",
+	"types": "dist/index.d.ts",
+	"keywords": [
+		"reactive",
+		"state"
+	],
+	"author": "tomasklaen",
+	"license": "MIT",
+	"files": [
+		"dist"
+	],
+	"engines": {
+		"node": ">=12"
+	},
+	"scripts": {
+		"build": "tsc",
+		"watch": "tsc --watch",
+		"clean": "rimraf dist",
+		"start": "ava --watch",
+		"test": "ava",
+		"preversion": "npm-run-all clean build",
+		"git-push": "git push",
+		"npm-publish": "npm publish",
+		"postversion": "npm-run-all git-push npm-publish"
+	},
+	"ava": {
+		"extensions": [
+			"ts"
+		],
+		"require": [
+			"ts-node/register"
+		]
+	},
+	"devDependencies": {
+		"ava": "^4.0.1",
+		"npm-run-all": "^4.1.5",
+		"rimraf": "^3.0.2",
+		"ts-node": "^10.4.0",
+		"tslib": "^2.3.1",
+		"typescript": "^4.5.4"
+	}
+}
