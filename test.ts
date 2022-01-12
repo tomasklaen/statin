@@ -129,13 +129,13 @@ test(`signal.edit() runs immediately, and passes the current value as 1st argume
 });
 
 test(`signal.edit() sends a changed signal after editor finishes`, (t) => {
-	const s = signal('foo');
+	const s = signal(['foo', 'bar']);
 	t.plan(1);
 	once(
 		() => s(),
-		() => t.pass()
+		() => t.deepEqual(s(), ['foo'])
 	);
-	s.edit(() => {});
+	s.edit((s) => s.pop());
 });
 
 test(`reaction(action) continually executes action as dependencies change`, (t) => {
