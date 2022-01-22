@@ -10,7 +10,7 @@ Features:
 -   Fully typed.
 -   View source friendly, it's just a single medium sized file.
 -   Clean, straight forward, no-magic API.
--   No proxies, decorators, or other abstractions that introduce non-standard behavior to wrapped objects.
+-   No proxies, decorators, or other abstractions to introduce non-standard behavior to wrapped objects.
 -   Error handling and recovery.
 -   Circular reaction detection.
 
@@ -31,10 +31,6 @@ npm install statin
 
 ## Usage
 
-You can see an interactive example here: [https://codesandbox.io/s/statin-example-yxp4s](https://codesandbox.io/s/statin-example-yxp4s)
-
-Brief summary of statin API:
-
 ```ts
 import {Signal, signal, computed, reaction} from 'statin';
 
@@ -47,8 +43,11 @@ console.log(number()); // 4
 // Set value
 number(5);
 
-// Create more signals
+// Create a signal that holds an array of other signals
 const numbers = signal<Signal<number>[]>([number]);
+
+// Create a computed signal that updates only
+// when one of its dependencies changes.
 const sum = computed(() => numbers().reduce((sum, value) => sum + value(), 0));
 
 // Create a reaction
@@ -73,6 +72,12 @@ dispose();
 ```
 
 NOTE: In a real codebase, all signal updates in the example above should happen inside an [action](#action). You'll get a warning if they don't. Read the action API for more details.
+
+## Examples
+
+Quick and brief interactive example: https://codesandbox.io/s/statin-example-yxp4s
+
+TodoMVC using preact, statin, and [poutr](https://github.com/tomasklaen/poutr): https://codesandbox.io/s/todomvc-preact-statin-poutr-b1s45
 
 ## Project state
 
@@ -143,7 +148,7 @@ A convenience method to edit mutable signal values such as arrays, maps, sets,..
 const set = signal(new Set<string>());
 
 // Mutates the set and sends changed signal afterwards
-set.edit(set => set.add('foo'));
+set.edit((set) => set.add('foo'));
 
 // This is essentially just a shorthand for
 set.value.add('foo');
