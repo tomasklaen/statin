@@ -345,7 +345,6 @@ export function computed<T extends unknown>(compute: () => T): Computed<T> {
 		return value!;
 	}
 	get.toJSON = () => toJSON(get());
-	get.observer = computedObserver;
 
 	return get as Computed<T>;
 }
