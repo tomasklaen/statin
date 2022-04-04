@@ -268,7 +268,7 @@ export function signal<T extends unknown>(value: T): Signal<T> {
 		triggerObservers(getSet);
 	};
 	getSet.edit = (editor: (value: T) => void) => {
-		editor(read());
+		editor(getSet.value);
 		getSet.changed();
 	};
 	getSet.toJSON = () => toJSON(read());
