@@ -174,7 +174,7 @@ function triggerObservers(dependency: Dependency) {
 		// it, so we need to make a copy here.
 		for (let observer of [...observersSet]) {
 			// Do not re-trigger current observer
-			if (observer === currentObserver) return;
+			if (observer === currentObserver) continue;
 
 			// When effectQueue is active, delay observer triggering to its end.
 			// Let computed values pass through to the try/catch so that they
