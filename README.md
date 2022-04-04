@@ -23,6 +23,11 @@ Bindings:
 
 -   [statin-preact](https://github.com/tomasklaen/statin-preact)
 
+Examples:
+
+-   [Quick interactive example](https://codesandbox.io/s/statin-example-yxp4s).
+-   [TodoMVC app example](https://codesandbox.io/s/todomvc-preact-statin-poutr-b1s45) using preact, statin, and [poutr](https://github.com/tomasklaen/poutr).
+
 ## Install
 
 ```
@@ -72,12 +77,6 @@ dispose();
 ```
 
 NOTE: In a real codebase, all signal updates in the example above should happen inside an [action](#action). You'll get a warning if they don't. Read the action API for more details.
-
-## Examples
-
-Quick and brief interactive example: https://codesandbox.io/s/statin-example-yxp4s
-
-TodoMVC using preact, statin, and [poutr](https://github.com/tomasklaen/poutr): https://codesandbox.io/s/todomvc-preact-statin-poutr-b1s45
 
 ## Project state
 
