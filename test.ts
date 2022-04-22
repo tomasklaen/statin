@@ -128,6 +128,16 @@ test(`signal.edit() runs immediately, and passes the current value as 1st argume
 	});
 });
 
+test(`signal.edit() doesn't subscribe the signal`, (t) => {
+	const s = signal('foo');
+	t.plan(0);
+	once(
+		() => s.edit(() => {}),
+		() => t.fail()
+	);
+	s('bar');
+});
+
 test(`signal.edit() sends a changed signal after editor finishes`, (t) => {
 	const s = signal(['foo', 'bar']);
 	t.plan(1);
