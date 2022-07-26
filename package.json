@@ -1,6 +1,6 @@
 {
 	"name": "statin",
-	"version": "1.0.2",
+	"version": "2.0.0",
 	"description": "Simple and tiny reactive state library.",
 	"homepage": "https://github.com/tomasklaen/statin",
 	"bugs": "https://github.com/tomasklaen/statin/issues",
