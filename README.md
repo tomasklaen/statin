@@ -2,7 +2,7 @@
 
 Simple and tiny reactive state library.
 
-Statin is heavily inspired by MobX, in fact, you can say it's a re-implementation of MobX in as little code as possible.
+Statin is heavily inspired by MobX. It was created as an attempt to get a MobX like reactivity in as little code as possible.
 
 Features:
 
@@ -10,7 +10,7 @@ Features:
 -   Fully typed.
 -   View source friendly, it's just a single medium sized file.
 -   Clean, straight forward, no-magic API.
--   No proxies, decorators, or other abstractions to introduce non-standard behavior to wrapped objects.
+-   No proxies, decorators, or other abstractions that introduce non-standard behavior to wrapped objects.
 -   Error handling and recovery.
 -   Circular reaction detection.
 
@@ -75,8 +75,6 @@ numbers.edit((array) => array.push(signal(2)));
 // Cancel reaction
 dispose();
 ```
-
-NOTE: In a real codebase, all signal updates in the example above should happen inside an [action](#action). You'll get a warning if they don't. Read the action API for more details.
 
 ## Project state
 
@@ -216,35 +214,6 @@ action(() => {
 ```
 
 NOTE: Signals read inside an action are not tracked! This means if you execute an action inside a reaction, the signals read inside an action will not be added as dependencies to the parent reaction.
-
-**IMPORTANT!**
-
-EVERY signal change should happen inside an action, even when you're updating only a single signal. This is because you **can't** safely make an assumption that single value change will only send a single change signal, as there can be computed values depending on it, and if some reaction depends on both the signal, as well as the computed value derived from it, it'll run twice every time you change the signal.
-
-To illustrate this, imagine this dependency tree:
-
-```
-A: signal
-
-B: computed
-└ A
-
-C: computed
-└ A
-
-R: reaction
-├ A
-├ B
-└ C
-```
-
-If you change the signal **A**, the reaction **R** will run 3 times, as the computed signals **B** and **C** would propagate the change event to reaction **R** as well.
-
-If you instead wrap the change to signal **A** in an action, all 3 change signals are going to be queued, de-duplicated, and reaction **R** triggered correctly only once.
-
-Changing a signal outside an action triggers a console warning.
-
-Functions passed to `reaction()` and `once()` automatically run in an action context.
 
 ### createAction
 
@@ -424,18 +393,6 @@ We get this object:
 In 99.9% cases serializations need to run only occasionally, or are at least throttled, therefore the implementation trades speed for size, and essentially all this does is `JSON.parse(JSON.stringify(value))`. This is still quite fast, but in a case where speed is of utmost importance, a separate implementation would be necessary.
 
 The other side effect of this implementation is that any value that is not serializable into JSON (such as functions) will be dropped.
-
-### setStrict
-
-```ts
-function setStrict(value: boolean): void;
-```
-
-Enables or disables strict mode, which is **enabled** by default.
-
-Strict mode behavior:
-
--   Changing a signal outside an action is a console warning.
 
 ## Debugging
 

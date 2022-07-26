@@ -1,18 +1,5 @@
 import test from 'ava';
-import {
-	signal,
-	computed,
-	once,
-	reaction,
-	action,
-	createAction,
-	toJS,
-	nameFn,
-	CircularReactionError,
-	setStrict,
-} from './src/index';
-
-setStrict(false);
+import {signal, computed, once, reaction, action, createAction, toJS, nameFn, CircularReactionError} from './src/index';
 
 test(`calling a signal with no argument reads it`, (t) => {
 	const s = signal('foo');
@@ -118,6 +105,30 @@ test(`once() internal disposer clears even dependencies created after it's been 
 	a('bar');
 	b('bar');
 	t.is(count, 0);
+});
+
+test(`signal(value) bulks effects`, (t) => {
+	const s = signal(1);
+	const c = computed(() => s() * 10);
+	t.plan(1);
+	reaction(
+		() => {
+			s();
+			c();
+		},
+		() => t.pass()
+	);
+	s(2);
+});
+
+test(`signal.change() triggers signal observers`, (t) => {
+	const s = signal('foo');
+	t.plan(1);
+	once(
+		() => s(),
+		() => t.pass()
+	);
+	s.changed();
 });
 
 test(`signal.edit() runs immediately, and passes the current value as 1st argument`, (t) => {

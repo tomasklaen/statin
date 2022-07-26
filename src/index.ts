@@ -7,8 +7,6 @@ const nameCounters: {[key: string]: number} = {};
 let effectQueue: Set<Observer> | null = null;
 let doNotTrack = false;
 let currentEffect: (() => void) | undefined;
-let strict = true;
-export const setStrict = (value: boolean) => (strict = value);
 
 /**
  * Reaction depth is a map keeping track of how many times was the reaction
@@ -264,8 +262,8 @@ export function signal<T extends unknown>(value: T): Signal<T> {
 
 	getSet.value = value;
 	getSet.changed = () => {
-		if (strict && !effectQueue) console.warn?.(new Error(`[statin] signal changed outside action`));
-		triggerObservers(getSet);
+		if (!effectQueue) bulkEffects(() => triggerObservers(getSet));
+		else triggerObservers(getSet);
 	};
 	getSet.edit = (editor: (value: T) => void) => {
 		editor(getSet.value);
