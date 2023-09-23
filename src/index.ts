@@ -1,11 +1,10 @@
 const IS_COMPUTED = Symbol('computed');
 const IS_STATIN_ERROR = Symbol('statin_error');
 const observersStack: Observer[] = [];
-const dependencyMap = new WeakMap<Observer, Set<Dependency>>();
-const observerMap = new WeakMap<Dependency, Set<Observer>>();
 const nameCounters: {[key: string]: number} = {};
 let effectQueue: Set<Observer> | null = null;
 let doNotTrack = false;
+let disallowWrites = false;
 let currentEffect: (() => void) | undefined;
 
 /**
@@ -20,7 +19,6 @@ const MAX_REACTION_DEPTH = 100;
  */
 
 type Observer = () => void;
-type Dependency = Signal<unknown> | Observer;
 
 export type Disposer = () => void;
 export type Action<T extends unknown> = (dispose: Disposer) => T;
@@ -115,73 +113,33 @@ function describeError(maybeError: unknown, source: string): Error {
 /**
  * Registers a dependency to the currently active observer.
  */
-function registerDependency(dependency: Dependency) {
+function registerObserver(observers: Set<Observer>) {
 	const observer = observersStack[observersStack.length - 1];
-	if (!observer || doNotTrack) return;
-
-	// Add observer to dependency's observers
-	let observersSet = observerMap.get(dependency);
-
-	if (!observersSet) {
-		observersSet = new Set<Observer>();
-		observerMap.set(dependency, observersSet);
-	}
-
-	observersSet.add(observer);
-
-	// Add dependency to observer's dependencies
-	let dependencySet = dependencyMap.get(observer);
-
-	if (!dependencySet) {
-		dependencySet = new Set<Signal<any>>();
-		dependencyMap.set(observer, dependencySet);
-	}
-
-	dependencySet.add(dependency);
-}
-
-/**
- * Clears passed observer's dependencies.
- */
-function clearDependencies(observer: Observer) {
-	let dependencySet = dependencyMap.get(observer);
-
-	if (!dependencySet) return;
-
-	for (let dependency of dependencySet) {
-		const trackersSet = observerMap.get(dependency);
-		if (trackersSet) {
-			trackersSet.delete(observer);
-			// Is this necessary when we are using WeakMap?
-			if (trackersSet.size === 0) observerMap.delete(dependency);
-		}
-	}
-
-	dependencyMap.delete(observer);
+	if (observer && !doNotTrack) observers.add(observer);
 }
 
 /**
  * Call all dependency observers.
  */
-function triggerObservers(dependency: Dependency) {
-	const observersSet = observerMap.get(dependency);
+function triggerObservers(observers: Set<Observer>) {
 	const currentObserver = observersStack[observersStack.length - 1];
 
-	if (observersSet) {
-		// Reactions would repopulate observersSet as we are iterating through
-		// it, so we need to make a copy here.
-		for (let observer of [...observersSet]) {
-			// Do not re-trigger current observer
-			if (observer === currentObserver) continue;
+	// Reactions would repopulate observersSet as we are iterating through
+	// it, so we need to make a copy here.
+	const observersCopy = [...observers];
+	observers.clear();
 
-			// When effectQueue is active, delay observer triggering to its end.
-			// Let computed values pass through to the try/catch so that they
-			// trigger they correctly propagate changes to their observers.
-			if (effectQueue && !isComputed(observer)) {
-				effectQueue.add(observer);
-			} else {
-				observer();
-			}
+	for (let observer of observersCopy) {
+		// Do not re-trigger current observer
+		if (observer === currentObserver) continue;
+
+		// When effectQueue is active, delay observer triggering to its end.
+		// Let computed values pass through to the try/catch so that they
+		// trigger they correctly propagate changes to their observers.
+		if (effectQueue && !isComputed(observer)) {
+			effectQueue.add(observer);
+		} else {
+			observer();
 		}
 	}
 }
@@ -189,7 +147,7 @@ function triggerObservers(dependency: Dependency) {
 /**
  * Resumes tracking paused by `action()` for the duration of `fn()`.
  */
-function resumeTracking(fn: () => void) {
+function resumeTrackingDuring(fn: () => void) {
 	let parentDoNotTrack = doNotTrack;
 	doNotTrack = false;
 	try {
@@ -254,6 +212,8 @@ function handleOrLog(error: Error, onError: ((error: Error) => void) | undefined
  * Note: `signal.edit(editor)` ignores value returned by editor, it assumes mutation is happening.
  */
 export function signal<T extends unknown>(value: T): Signal<T> {
+	const observers = new Set<Observer>();
+
 	function getSet(): T;
 	function getSet(value: T): void;
 	function getSet(value?: T) {
@@ -262,8 +222,8 @@ export function signal<T extends unknown>(value: T): Signal<T> {
 
 	getSet.value = value;
 	getSet.changed = () => {
-		if (!effectQueue) bulkEffects(() => triggerObservers(getSet));
-		else triggerObservers(getSet);
+		if (!effectQueue) bulkEffects(() => triggerObservers(observers));
+		else triggerObservers(observers);
 	};
 	getSet.edit = (editor: (value: T) => void) => {
 		editor(getSet.value);
@@ -272,11 +232,12 @@ export function signal<T extends unknown>(value: T): Signal<T> {
 	getSet.toJSON = () => toJSON(read());
 
 	function read() {
-		registerDependency(getSet);
+		registerObserver(observers);
 		return getSet.value;
 	}
 
 	function write(value: T) {
+		if (disallowWrites) throw new Error(`Writing to signals not allowed in this context.`);
 		if (value !== getSet.value) {
 			getSet.value = value;
 			getSet.changed();
@@ -303,6 +264,7 @@ export function signal<T extends unknown>(value: T): Signal<T> {
  */
 export function computed<T extends unknown>(compute: () => T): Computed<T> {
 	const name = fnName(compute, 'Computed');
+	const observers = new Set<Observer>();
 	let value: T | undefined;
 	let hasChanges = true;
 	let hasError = false;
@@ -313,26 +275,27 @@ export function computed<T extends unknown>(compute: () => T): Computed<T> {
 		hasError = false;
 		error = undefined;
 		hasChanges = true;
-		clearDependencies(computedObserver);
-		triggerObservers(computedObserver);
+		triggerObservers(observers);
 	}
 	computedObserver.displayName = name;
 	computedObserver[IS_COMPUTED] = true as const;
 
 	function get() {
-		registerDependency(computedObserver);
+		registerObserver(observers);
 
 		if (hasChanges) {
 			observersStack.push(computedObserver);
+			disallowWrites = true;
 
 			try {
 				hasError = false;
 				error = undefined;
-				resumeTracking(() => (value = compute()));
+				resumeTrackingDuring(() => (value = compute()));
 			} catch (error_) {
 				hasError = true;
 				error = describeError(error_, name);
 			} finally {
+				disallowWrites = false;
 				hasChanges = false;
 				observersStack.pop();
 			}
@@ -561,22 +524,22 @@ export function reaction<T extends unknown>(
  * any of them changes, than forgets about everything.
  */
 export function once(observe: OnceAction, effect: OnceEffect, {onError}: OnceOptions = {}): Disposer {
-	const dispose = () => clearDependencies(observer);
+	let disposed = false;
+	const dispose = () => (disposed = true);
 	const observerName = fnName(observe, 'OnceObserver');
 	const effectName = fnName(effect, 'OnceEffect');
 	const errorHandler = onError ? (error: Error) => onError(error, dispose) : undefined;
 	const observer = nameFn(observerName, () => {
-		dispose();
-		bulkEffects(effect, {onError: (error) => handleOrLog(describeError(error, effectName), errorHandler)});
+		if (!disposed) {
+			dispose();
+			bulkEffects(effect, {onError: (error) => handleOrLog(describeError(error, effectName), errorHandler)});
+		}
 	});
 
 	observersStack.push(observer);
 
 	try {
-		let internalDisposerCalled = false;
-		const internalDisposer = () => (internalDisposerCalled = true);
-		resumeTracking(() => observe(internalDisposer));
-		if (internalDisposerCalled) dispose();
+		resumeTrackingDuring(() => observe(dispose));
 	} catch (error) {
 		handleOrLog(describeError(error, observerName), errorHandler);
 	} finally {

@@ -1,5 +1,18 @@
 # statin
 
+> Branch info:
+>
+> Simplifies observer/dependency tracking.
+>
+> Pros:
+> - Shaves off 300 bytes.
+> - Observer tracking and code is simpler to reason about.
+>
+> Cons:
+> - Observers don't get cleared after they're disposed until the signal that is tracking them is written into again. This might cause a memory leak in an extreme case where there's a signal that doesn't change, but keeps getting more and more observers subscribed to it in a long observe→dispose chain, such as (P)React components mounting and unmounting.
+>
+> In practice, the leak issue _should_ hardly ever manifest itself into being noticeable, but it is a potential footgun, so this solution is going to remain in this branch as an alternative I felt bad about deleting.
+
 Simple and tiny reactive state library.
 
 Statin is heavily inspired by MobX. It was created as an attempt to get a MobX like reactivity in as little code as possible.

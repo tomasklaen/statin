@@ -528,8 +528,8 @@ test(`reaction() inside action() still tracks its dependencies`, (t) => {
 			() => t.pass()
 		);
 		s('bar');
-		dispose();
-	});
+		return dispose;
+	})();
 });
 
 test(`once() inside once() doesn't cancel tracking`, (t) => {
@@ -588,18 +588,10 @@ test(`createAction() wraps the action, inheriting arguments and return value`, (
 	t.is(action('foo'), 'foobar');
 });
 
-test(`computed() doesn't get re-triggered when signal is changed inside of it`, (t) => {
-	t.plan(4);
+test(`computed() throws when signal is written to inside of it`, (t) => {
 	const a = signal(1);
-	const c = computed(() => {
-		const result = a();
-		a(2);
-		t.pass();
-		return result;
-	});
-	t.is(c(), 1);
-	a(3);
-	t.is(c(), 3);
+	const c = computed(() => a(2));
+	t.throws(c);
 });
 
 test(`computed() describes errors correctly`, (t) => {
