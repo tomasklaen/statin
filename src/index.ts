@@ -189,7 +189,7 @@ function triggerObservers(dependency: Dependency) {
 /**
  * Resumes tracking paused by `action()` for the duration of `fn()`.
  */
-function resumeTracking(fn: () => void) {
+function resumeTrackingDuring(fn: () => void) {
 	let parentDoNotTrack = doNotTrack;
 	doNotTrack = false;
 	try {
@@ -328,7 +328,7 @@ export function computed<T extends unknown>(compute: () => T): Computed<T> {
 			try {
 				hasError = false;
 				error = undefined;
-				resumeTracking(() => (value = compute()));
+				resumeTrackingDuring(() => (value = compute()));
 			} catch (error_) {
 				hasError = true;
 				error = describeError(error_, name);
@@ -575,7 +575,7 @@ export function once(observe: OnceAction, effect: OnceEffect, {onError}: OnceOpt
 	try {
 		let internalDisposerCalled = false;
 		const internalDisposer = () => (internalDisposerCalled = true);
-		resumeTracking(() => observe(internalDisposer));
+		resumeTrackingDuring(() => observe(internalDisposer));
 		if (internalDisposerCalled) dispose();
 	} catch (error) {
 		handleOrLog(describeError(error, observerName), errorHandler);
