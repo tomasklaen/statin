@@ -4,7 +4,10 @@
 	"description": "Simple and tiny reactive state library.",
 	"homepage": "https://github.com/tomasklaen/statin",
 	"bugs": "https://github.com/tomasklaen/statin/issues",
-	"repository": "github:tomasklaen/statin",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/tomasklaen/statin.git"
+	},
 	"main": "dist/index.js",
 	"types": "dist/index.d.ts",
 	"keywords": [
