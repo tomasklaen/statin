@@ -6,6 +6,7 @@ const observerMap = new WeakMap<Dependency, Set<Observer>>();
 const nameCounters: {[key: string]: number} = {};
 let effectQueue: Set<Observer> | null = null;
 let doNotTrack = false;
+let disallowWrites = false;
 let currentEffect: (() => void) | undefined;
 
 /**
@@ -277,6 +278,7 @@ export function signal<T extends unknown>(value: T): Signal<T> {
 	}
 
 	function write(value: T) {
+		if (disallowWrites) throw new Error(`Writing to signals not allowed in this context.`);
 		if (value !== getSet.value) {
 			getSet.value = value;
 			getSet.changed();
@@ -324,6 +326,7 @@ export function computed<T extends unknown>(compute: () => T): Computed<T> {
 
 		if (hasChanges) {
 			observersStack.push(computedObserver);
+			disallowWrites = true;
 
 			try {
 				hasError = false;
@@ -333,6 +336,7 @@ export function computed<T extends unknown>(compute: () => T): Computed<T> {
 				hasError = true;
 				error = describeError(error_, name);
 			} finally {
+				disallowWrites = false;
 				hasChanges = false;
 				observersStack.pop();
 			}
