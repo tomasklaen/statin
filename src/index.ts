@@ -27,30 +27,36 @@ export type Disposer = () => void;
 export type Action<T extends unknown> = (dispose: Disposer) => T;
 
 export interface Signal<T extends unknown = unknown> {
-	// Read value
+	/** Read value. */
 	(): T;
-	// Set value
+	/** Set value. */
 	(value: T): void;
-	// Non-reactive reference to value
+	/** Non-reactive reference to value. */
 	value: T;
-	// Manually trigger value change signal
+	/** Manually triggers value change signal. */
 	changed: () => void;
-	// Edit mutable signal value.
-	// When editor function finishes, change signal will be sent for the current value.
-	// Return value is ignored.
+	/**
+	 * Edit mutable signal value.
+	 *
+	 * When editor function finishes, change signal will be sent for the current value.
+	 *
+	 * Return value is ignored.
+	 */
 	edit: (editor: (value: T) => void) => void;
 	toJSON: () => T;
-	// It's common to forget `()` and do `signal.length` to check arrays, which
-	// usually doesn't get caught because `function.length` is also a number.
-	// By setting this to `unknown` we get TypeScript to complain.
+	/**
+	 * It's common to forget `()` and do `signal.length` to check arrays, which
+	 * usually doesn't get caught because `function.length` is also a number.
+	 * By setting this to `unknown` we get TypeScript to complain.
+	 */
 	length: unknown;
 }
 
 export interface Computed<T extends unknown> {
-	// Read value.
+	/** Read value. */
 	(): T;
 	toJSON: () => T;
-	// See `Signal.length` comment
+	/** See `Signal.length` comment. */
 	length: unknown;
 }
 
@@ -190,7 +196,7 @@ function triggerObservers(dependency: Dependency) {
 /**
  * Resumes tracking paused by `action()` for the duration of `fn()`.
  */
-function resumeTrackingDuring(fn: () => void) {
+function resumeTrackingWhile(fn: () => void) {
 	let parentDoNotTrack = doNotTrack;
 	doNotTrack = false;
 	try {
@@ -330,7 +336,7 @@ export function computed<T extends unknown>(compute: (prev: T | undefined) => T)
 			try {
 				hasError = false;
 				error = undefined;
-				resumeTrackingDuring(() => (value = compute(value)));
+				resumeTrackingWhile(() => (value = compute(value)));
 			} catch (error_) {
 				hasError = true;
 				error = describeError(error_, name);
@@ -578,7 +584,7 @@ export function once(observe: OnceAction, effect: OnceEffect, {onError}: OnceOpt
 	try {
 		let internalDisposerCalled = false;
 		const internalDisposer = () => (internalDisposerCalled = true);
-		resumeTrackingDuring(() => observe(internalDisposer));
+		resumeTrackingWhile(() => observe(internalDisposer));
 		if (internalDisposerCalled) dispose();
 	} catch (error) {
 		handleOrLog(describeError(error, observerName), errorHandler);
