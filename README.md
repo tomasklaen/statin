@@ -167,10 +167,10 @@ interface Computed<T extends unknown> {
 ### computed
 
 ```ts
-function computed<T extends unknown>(compute: () => T): Computed<T>;
+function computed<T extends unknown>(compute: (prev: T | undefined) => T): Computed<T>;
 ```
 
-Creates a cached computed value that re-computes and sends changed signal to its observers when any of the signals it depends on changes.
+Creates a cached computed value that re-computes and sends changed signal to its observers when any of the signals it depends on changes. `compute()` function receives the previous value as its 1st argument.
 
 **IMPORTANT:** Writing into signals inside `computed(() => { ... })` is not allowed, and will throw an error.
 

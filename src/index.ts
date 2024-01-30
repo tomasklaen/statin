@@ -303,7 +303,7 @@ export function signal<T extends unknown>(value: T): Signal<T> {
  * nFactorial(); // 2nd computation of `factorial(6)`
  * ```
  */
-export function computed<T extends unknown>(compute: () => T): Computed<T> {
+export function computed<T extends unknown>(compute: (prev: T | undefined) => T): Computed<T> {
 	const name = fnName(compute, 'Computed');
 	let value: T | undefined;
 	let hasChanges = true;
@@ -311,7 +311,6 @@ export function computed<T extends unknown>(compute: () => T): Computed<T> {
 	let error: unknown;
 
 	function computedObserver() {
-		value = undefined;
 		hasError = false;
 		error = undefined;
 		hasChanges = true;
@@ -331,7 +330,7 @@ export function computed<T extends unknown>(compute: () => T): Computed<T> {
 			try {
 				hasError = false;
 				error = undefined;
-				resumeTrackingDuring(() => (value = compute()));
+				resumeTrackingDuring(() => (value = compute(value)));
 			} catch (error_) {
 				hasError = true;
 				error = describeError(error_, name);

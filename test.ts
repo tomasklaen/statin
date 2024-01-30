@@ -380,6 +380,14 @@ test(`computed() creates a computed signal`, (t) => {
 	t.is(c(), 'foobar');
 });
 
+test(`computed(fn) receives previous value`, (t) => {
+	const n = signal(2);
+	const c = computed<number>((prev) => n() * (prev ?? 1));
+	t.is(c(), 2);
+	n(3);
+	t.is(c(), 6);
+});
+
 test(`computed() only re-computes when one of the dependencies change`, (t) => {
 	const foo = signal('foo');
 	const bar = signal('bar');
