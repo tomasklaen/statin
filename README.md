@@ -97,6 +97,11 @@ interface Signal<T extends unknown = unknown> {
 	value: T;
 	changed: () => void;
 	edit: (editor: (value: T) => void) => void;
+	// Aliases
+	get: () => T;
+	r: () => T;
+	set: (value: T) => void;
+	w: (value: T) => void;
 }
 ```
 

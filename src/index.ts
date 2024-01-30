@@ -29,8 +29,14 @@ export type Action<T extends unknown> = (dispose: Disposer) => T;
 export interface Signal<T extends unknown = unknown> {
 	/** Read value. */
 	(): T;
+	/** Read value. */
+	get: () => T;
+	r: () => T;
 	/** Set value. */
 	(value: T): void;
+	/** Set value. */
+	set: (value: T) => void;
+	w: (value: T) => void;
 	/** Non-reactive reference to value. */
 	value: T;
 	/** Manually triggers value change signal. */
@@ -264,10 +270,21 @@ export function signal<T extends unknown>(value: T): Signal<T> {
 	function getSet(): T;
 	function getSet(value: T): void;
 	function getSet(value?: T) {
-		return arguments.length ? write(value!) : read();
+		return arguments.length ? getSet.w(value!) : getSet.r();
 	}
 
 	getSet.value = value;
+	getSet.get = getSet.r = () => {
+		registerDependency(getSet);
+		return getSet.value;
+	};
+	getSet.set = getSet.w = (value: T) => {
+		if (disallowWrites) throw new Error(`Writing to signals not allowed in this context.`);
+		if (value !== getSet.value) {
+			getSet.value = value;
+			getSet.changed();
+		}
+	};
 	getSet.changed = () => {
 		if (!effectQueue) bulkEffects(() => triggerObservers(getSet));
 		else triggerObservers(getSet);
@@ -276,20 +293,7 @@ export function signal<T extends unknown>(value: T): Signal<T> {
 		editor(getSet.value);
 		getSet.changed();
 	};
-	getSet.toJSON = () => toJSON(read());
-
-	function read() {
-		registerDependency(getSet);
-		return getSet.value;
-	}
-
-	function write(value: T) {
-		if (disallowWrites) throw new Error(`Writing to signals not allowed in this context.`);
-		if (value !== getSet.value) {
-			getSet.value = value;
-			getSet.changed();
-		}
-	}
+	getSet.toJSON = () => toJSON(getSet.r());
 
 	return getSet;
 }

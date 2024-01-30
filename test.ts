@@ -6,10 +6,32 @@ test(`calling a signal with no argument reads it`, (t) => {
 	t.is(s(), 'foo');
 });
 
+test(`signal.get reads the signal`, (t) => {
+	const s = signal('foo');
+	t.is(s.get(), 'foo');
+});
+
+test(`signal.r() is an alias of signal.get()`, (t) => {
+	const s = signal('foo');
+	t.is(s.get, s.r);
+});
+
 test(`calling a signal with one argument sets it`, (t) => {
 	const s = signal('foo');
 	s('bar');
 	t.is(s(), 'bar');
+});
+
+test(`signal.set(value) sets the signal`, (t) => {
+	const s = signal('foo');
+	s.set('bar');
+	t.is(s(), 'bar');
+});
+
+test(`signal.w() is an alias of signal.set()`, (t) => {
+	const s = signal('foo');
+	s.set('bar');
+	t.is(s.set, s.w);
 });
 
 test(`signal.value points to the current value`, (t) => {
